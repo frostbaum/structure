@@ -442,8 +442,8 @@ contains
     logical, optional :: readerror
     
     call struc_clr(this)
-    
-    open(newunit=un,file=fpath,status='old',iostat=ierr)
+    un = 405
+    open(un,file=fpath,status='old',iostat=ierr)
     if (ierr .eq. 0) then
       select case(fmt)
         case('xyz')
@@ -490,7 +490,7 @@ contains
     logical, optional :: writeerror
     
     fail = .false.
-    
+    un = 406
     if (this%natoms .eq. 0) then
       write(6,'(A)') 'Cannot write empty structure'
       if (present(writeerror)) then
@@ -505,13 +505,15 @@ contains
       cmdtmp = 'command string'
     end if
     
-    open(newunit=un,file=fpath,status='replace',iostat=werr)
+    open(un,file=fpath,status='replace',iostat=werr)
     if (werr .eq. 0) then
       select case(fmt)
         case('xyz')
           call io_write_xyz(this,un)
         case('mop')
           call io_write_mop(this,un,trim(cmdtmp))
+        case('inp')
+          call io_write_inp(this,un,trim(cmdtmp))
         case default
           write(6,'(A)') 'Write format "'//fmt//'" unknown'
           fail = .true.
@@ -645,6 +647,30 @@ contains
       write(un,'(A2,F9.5,A2,F9.5,A2,F9.5,A2)') adjustl(this%atmtype(i)),&
       &this%coords(1,i),' 1',this%coords(2,i),' 1',this%coords(3,i),' 1'
     end do
+  end subroutine
+  
+  subroutine io_write_inp(this,un,cmd)
+    type(structure) :: this
+    integer :: i, un
+    character(*) :: cmd
+    character(len=6) :: spc
+    
+    spc = '   '
+    
+    write(un,'(A)') "%MEM=1GB"
+    write(un,'(A)') cmd
+    write(un,*)
+    write(un,'(A)') 'testtest'
+    write(un,*)
+    write(un,'(A)') '0 1'
+    
+    do i=1,this%natoms
+      write(un,'(A6,F12.7,A3,F12.7,A3,F12.7)') adjustl(this%atmtype(i))//' '//spc,&
+      &this%coords(1,i),spc,this%coords(2,i),spc,this%coords(3,i)
+    end do
+    
+    write(un,*)
+  
   end subroutine
   
   !***************************************!
